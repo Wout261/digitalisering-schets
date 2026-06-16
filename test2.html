@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Werkblad</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    padding: 40px;
+}
+
+/* verborgen pagina */
+.hidden {
+    display: none;
+}
+
+/* tabel */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+td {
+    border: 1px solid black;
+    padding: 15px;
+    cursor: pointer;
+}
+
+tr:hover {
+    background: lightgray;
+}
+
+/* layout */
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+/* input */
+input {
+    background: black;
+    color: white;
+    border: none;
+    padding: 20px;
+    font-size: 20px;
+    width: 100%;
+}
+
+.big {
+    font-size: 50px;
+    font-weight: bold;
+}
+
+.box {
+    border: 5px solid black;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+
+.timer {
+    font-size: 40px;
+    cursor: pointer;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.title {
+    font-weight: bold;
+    font-size: 30px;
+}
+
+/* fullscreen */
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    background: white;
+}
+
+/* knoppen */
+button {
+    padding: 15px;
+    font-size: 20px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.back {
+    background: gray;
+    color: white;
+}
+
+.end {
+    background: green;
+    color: white;
+}
+
+#vak img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#nextBtn, #prevBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: none;
+}
+
+#nextBtn {
+    right: 30px;
+}
+
+#prevBtn {
+    left: 30px;
+}
+
+/* alleen zichtbaar in fullscreen */
+.fullscreen #nextBtn,
+.fullscreen #prevBtn {
+    display: block;
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- ✅ STARTBLAD -->
+<div id="start">
+
+<h1>Kies order</h1>
+
+<table id="tabel"></table>
+
+</div>
+
+<!-- ✅ WERKBLAD -->
+<div id="werk" class="hidden">
+
+<button class="back" onclick="terug()">⬅ Terug</button>
+
+<div class="container">
+
+    <div>
+        <h2>Ordernummer</h2>
+        <input type="text" id="order" readonly>
+
+        <h2>Artikelnummer</h2>
+        <input type="text" id="artikel" readonly>
+
+        <p class="big">Aantal: <span id="aantal"></span></p>
+    </div>
+
+    <div>
+        <div class="box" id="vak" onclick="toggleFullscreen()">
+    <img src="image.png" id="image">
+    
+ <!-- ✅ pijltje -->
+    <div id="prevBtn" onclick="prevImage(event)">⬅</div>   
+    <div id="nextBtn" onclick="nextImage(event)">➡</div>
+
+</div>
+
+</div>
+
+<div class="container">
+
+    <div>
+        <p class="title">Insteltijd</p>
+        <div class="timer" onclick="startTimer('t1')">00:00:00</div>
+    </div>
+
+    <div>
+        <p class="title">Werktijd</p>
+        <div class="timer" onclick="startTimer('t2')">00:00:00</div>
+    </div>
+
+</div>
+
+
+<button class="end" onclick="eindeOrder()">Order afronden</button>
+
+
+</div>
+
+<script>
+
+// ✅ TABEL MAKEN (random)
+let tabel = document.getElementById("tabel");
+
+
+tabel.innerHTML = `
+<tr>
+    <th>Klaar</th>
+    <th>tek:</th>
+    <th>M</th>
+    <th>Size</th>
+    <th>Moergraf.</th>
+    <th>Flares</th>
+    <th>Buigbaar machine</th>
+    <th>Ordernummer</th>
+    <th>Artikelnummer</th>
+</tr>
+`;
+
+let orders = []; // lijst opslaan
+
+for (let i = 0; i < 5; i++) {
+    let order = Math.floor(Math.random() * 10000);
+    let artikel = Math.floor(Math.random() * 10000);
+
+    orders.push({order, artikel, klaar: false});
+
+let kleuren = ["green", "red", "yellow"];
+let kleur = kleuren[Math.floor(Math.random() * 3)];
+
+let row = `
+<tr id="row-${i}">
+
+    <td id="status-${i}"></td>
+
+    <td onclick="klikVak(${i},1)" id="c-${i}-1"></td>
+    <td onclick="klikVak(${i},2)" id="c-${i}-2"></td>
+    <td onclick="klikVak(${i},3)" id="c-${i}-3"></td>
+    <td onclick="klikVak(${i},4)" id="c-${i}-4"></td>
+    <td onclick="klikVak(${i},5)" id="c-${i}-5"></td>
+
+    <td style="background:${kleur}"></td>
+
+    <!-- ✅ alleen deze opent werkblad -->
+    <td onclick="openOrder(${i})">${order}</td>
+
+    <td onclick="openOrder(${i})">${artikel}</td>
+
+</tr>
+`;
+
+           
+
+    tabel.innerHTML += row;
+}
+
+// ✅ NAAR WERKBLAD
+let currentIndex = null;
+function openOrder(index) {
+    let selected = orders[index];
+
+    currentIndex = index;
+
+    document.getElementById("start").classList.add("hidden");
+    document.getElementById("werk").classList.remove("hidden");
+
+    document.getElementById("order").value = selected.order;
+    document.getElementById("artikel").value = selected.artikel;
+
+    document.getElementById("aantal").textContent = Math.floor(Math.random() * 20) + 1;
+    
+// ✅ reset afbeelding
+    huidige = 0;
+    document.getElementById("image").src = afbeeldingen[0];
+
+
+}
+
+// ✅ TERUG
+
+function terug() {
+    document.getElementById("werk").classList.add("hidden");
+    document.getElementById("start").classList.remove("hidden");
+
+    // ✅ timers resetten
+    ['t1', 't2'].forEach((id, index) => {
+        clearInterval(timers[id].interval);
+        timers[id].running = false;
+        timers[id].time = 0;
+
+        document.querySelectorAll('.timer')[index].textContent = "00:00:00";
+    });
+}
+
+
+function eindeOrder() {
+    if (currentIndex !== null) {
+        orders[currentIndex].klaar = true;
+        document.getElementById("status-" + currentIndex).textContent = "✅";
+    }
+
+    terug(); // daarna gewoon teruggaan
+}
+
+
+// ✅ TIMERS
+let timers = {
+    t1: {time: 0, running: false, interval: null},
+    t2: {time: 0, running: false, interval: null}
+};
+
+function startTimer(id) {
+    let timer = timers[id];
+
+    if (!timer.running) {
+        timer.running = true;
+        timer.interval = setInterval(() => {  
+            timer.time += 10;
+
+            let minutes = Math.floor(timer.time / 60000);
+            let seconds = Math.floor((timer.time % 60000) / 1000);
+            let milliseconds = Math.floor((timer.time % 1000) / 10);
+
+            minutes = String(minutes).padStart(2, '0');
+            seconds = String(seconds).padStart(2, '0');
+            milliseconds = String(milliseconds).padStart(2, '0');
+
+            document.querySelectorAll('.timer')[id === 't1' ? 0 : 1].textContent =
+                `${minutes}:${seconds}:${milliseconds}`;
+
+        }, 10);
+    } else {
+        clearInterval(timer.interval);
+        timer.running = false;
+    }
+}
+
+// ✅ FULLSCREEN
+function toggleFullscreen() {
+    document.getElementById("vak").classList.toggle("fullscreen");
+}
+
+function klikVak(rij, kolom) {
+    let cel = document.getElementById(`c-${rij}-${kolom}`);
+
+    if (cel.textContent === "❌") {
+        cel.textContent = "";
+    } else {
+        cel.textContent = "❌";
+    }
+}
+
+let afbeeldingen = ["image.png", "image2.png"];
+let huidige = 0;
+
+function nextImage(event) {
+    event.stopPropagation(); // voorkomt fullscreen klik
+
+    huidige++;
+
+    if (huidige >= afbeeldingen.length) {
+        huidige = 0;
+    }
+
+    document.getElementById("image").src = afbeeldingen[huidige];
+}
+
+function prevImage(event) {
+    event.stopPropagation();
+
+    huidige--;
+    if (huidige < 0) {
+        huidige = afbeeldingen.length - 1;
+    }
+
+    document.getElementById("image").src = afbeeldingen[huidige];
+}
+
+</script>
+
+</body>
+</html>
